@@ -28,6 +28,7 @@ Each task has one lifecycle state: `blocked`, `ready`, `active`, `awaiting-revie
 | `active` | This invocation selected the task as the sole ready task and work has started, but no task PR has been opened and no merged evidence exists. | A PR opens, merged evidence appears, or execution ends and state is recomputed later. | Blocks all other harness-task selection. |
 | `ready` | Every readiness condition in this document is true. | The task is selected, completed, receives an open task PR, or a readiness condition becomes false. | Eligible for one explicit selection command. |
 | `blocked` | The task is not completed, awaiting-review, active, or ready because at least one required condition is absent, invalid, or conflicting. | The blocking condition is resolved and state is recomputed. | Must not be selected, planned, pre-staged, or executed. |
+| `phase-gate-pending` | All required non-gate tasks are completed, the phase-gate definition is complete, and the phase gate is not completed. | The gate merges and closes the phase, or required gate evidence or authority becomes invalid and phase status is recomputed. | Only the gate may be considered under normal lifecycle rules; no later phase is authorized. |
 
 ### Completed
 
@@ -65,9 +66,9 @@ The harness must report the specific unsatisfied condition and must not infer mi
 
 ### Phase-gate-pending
 
-A phase is `phase-gate-pending` when every non-gate task required by its approved sequence is completed, the gate definition is complete, and the gate has not yet completed. The gate task may then be `ready`, `active`, or `awaiting-review` under the normal lifecycle rules.
+A phase enters `phase-gate-pending` when every non-gate task required by its approved sequence is completed, the gate definition is complete, and the gate has not completed. It exits when a valid gate pull request merges and closes the phase, or when required gate evidence or authority becomes invalid and phase state is recomputed. The gate task may be `ready`, `active`, or `awaiting-review` under the normal lifecycle rules.
 
-A phase does not close merely because it is phase-gate-pending or because its gate PR is open. It closes only when a valid gate pull request merges. A merged gate closes only that phase; it does not activate or authorize a later phase by implication.
+A phase does not close merely because it is phase-gate-pending or because its gate PR is open. A merged gate closes only that phase; it does not activate or authorize a later phase by implication.
 
 ## Completion, Dependency, and Definition Rules
 
