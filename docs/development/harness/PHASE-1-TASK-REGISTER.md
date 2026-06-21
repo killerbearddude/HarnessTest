@@ -14,12 +14,12 @@ A later task becomes eligible only when its direct predecessor has merged and a 
 
 ## Approved Phase 1 Sequence
 
-| Sequence | Task ID | Title | Initial status |
+| Sequence | Task ID | Title | Evidence at this verification |
 | --- | --- | --- | --- |
-| 1 | P1-T01 | Define the Phase 1 Task Register | Current authorized task |
-| 2 | P1-T02 | Define Repository Protection Requirements | Later task; eligible only after P1-T01 merges and a later `Proceed with next task.` instruction |
-| 3 | P1-T03 | Define Pull Request and CI Enforcement Requirements | Later task; eligible only after P1-T02 merges and a later `Proceed with next task.` instruction |
-| 4 | P1-GATE-01 | Review and Close Phase 1 | Later phase gate; eligible only after P1-T03 merges and a later `Proceed with next task.` instruction |
+| 1 | P1-T01 | Define the Phase 1 Task Register | Completed: merged PR #6 |
+| 2 | P1-T02 | Define Repository Protection Requirements | Completed: merged PR #7 |
+| 3 | P1-T03 | Define Pull Request and CI Enforcement Requirements | Completed: merged PR #8 |
+| 4 | P1-GATE-01 | Review and Close Phase 1 | Awaiting human review: this gate PR is open and unmerged |
 
 ```text
 P1-T01 → P1-T02 → P1-T03 → P1-GATE-01
@@ -51,6 +51,12 @@ P1-T01 → P1-T02 → P1-T03 → P1-GATE-01
 - **Deliverable:** A Phase 1 gate report and any necessary Phase 1 register update, both authorized only when P1-GATE-01 becomes eligible.
 - **Acceptance conditions:** The gate records merged-PR evidence for P1-T01 through P1-T03, evaluates Phase 1 criteria, states that closure is contingent on the gate PR merge, and does not define or start Phase 2 work.
 
+## Phase 1 Closure Rule
+
+Phase 1 closes only after the P1-GATE-01 gate PR is merged. Until that merge occurs, P1-GATE-01 remains awaiting human review and Phase 1 remains active.
+
+A merged gate PR closes Phase 1; it does not implement repository enforcement or authorize Phase 2 work.
+
 ## Locked Scope
 
 This register does not authorize:
@@ -60,11 +66,11 @@ This register does not authorize:
 - evaluator, content, diagnostics, persistence, or UI contracts;
 - GitHub workflows, CI configuration, harness scripts, or branch-protection changes;
 - Phase 2 or later task definitions; or
-- selection, planning, or execution of P1-T02, P1-T03, P1-GATE-01, or later-phase work before eligibility conditions are met.
+- selection, planning, or execution of later-phase work before explicit Project Owner authorization.
 
 ## Phase 2 Lock
 
-**Phase 2 remains locked.** It has no authorized tasks. Phase 1 completion does not authorize Phase 2 setup, task definition, planning, or execution.
+**Phase 2 remains locked.** It has no authorized task register and no executable task. Phase 1 completion does not authorize Phase 2 setup, task definition, planning, or execution.
 
 ## Stop Condition
 
