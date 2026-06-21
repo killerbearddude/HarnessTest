@@ -7,6 +7,7 @@
 - **Title:** Review and close Phase 2
 - **Task type:** phase gate
 - **Predecessor dependency:** P2-T04 must be completed by merged pull-request evidence.
+- **Task-state authority:** GitHub merged pull-request evidence determines predecessor completion; P2-T04 must be merged before P2-GATE-01 may become ready. GitHub open pull-request evidence determines whether a harness task is active or awaiting human review. The active Phase 2 register and merged phase-gate evidence determine active-phase status. This P2-GATE-01 task-definition file governs P2-GATE-01 scope, deliverable, acceptance criteria, validation, and stop condition. Current GitHub PR evidence controls over stale static task-status wording. A missing or invalid required task-definition field blocks execution. Exactly one harness task may be executing or awaiting human review at a time.
 
 ## Purpose
 
