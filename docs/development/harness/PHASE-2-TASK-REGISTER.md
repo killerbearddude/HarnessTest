@@ -26,6 +26,15 @@ P2-T01 is the Phase 2 setup task. It is complete only when its pull request merg
 P2-T01 → P2-T02 → P2-T03 → P2-T04 → P2-GATE-01
 ```
 
+## One-Time Corrective Repair: P2-R01
+
+P2-R01 — Repair P2-T03 executable task-definition compliance — is a one-time bounded repair authorized before P2-T03 execution. Its predecessor basis is merged P2-T02 evidence and the identified missing Task-state authority field in `docs/development/harness/tasks/P2-T03.md`.
+
+- P2-R01 changes only this register and `docs/development/harness/tasks/P2-T03.md`.
+- P2-R01 does not alter the approved Phase 2 sequence and does not replace P2-T03.
+- P2-T03 remains blocked until a valid P2-R01 pull request is merged.
+- After P2-R01 merges, a later explicit `Proceed with next task.` instruction may select P2-T03 only if all normal eligibility conditions pass.
+
 ## Executable Task Definitions
 
 Each remaining Phase 2 task has a separate executable task-definition file under `docs/development/harness/tasks/`. Those files provide the bounded paths, authority documents, deliverables, acceptance criteria, validation, and stop conditions required for execution.
