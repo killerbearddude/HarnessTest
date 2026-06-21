@@ -1,7 +1,7 @@
 name: Harness PR Enforcement
 
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - main
     types:
@@ -29,7 +29,6 @@ jobs:
             const pr = context.payload.pull_request;
             const body = pr.body || '';
             const errors = [];
-            const warnings = [];
 
             const requiredHeadings = [
               '## Task identity',
@@ -198,9 +197,6 @@ jobs:
               }
             }
 
-            if (warnings.length > 0) {
-              core.warning(warnings.join('\n'));
-            }
             if (errors.length > 0) {
               core.setFailed(errors.join('\n'));
             } else {
