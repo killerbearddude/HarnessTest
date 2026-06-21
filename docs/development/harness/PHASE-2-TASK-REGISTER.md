@@ -4,74 +4,55 @@
 
 **Phase 2 — Establish Executable Task Authority**
 
-Phase 2 establishes repository-native executable task authority. Its outcome is a task-definition format and a versioned task set that allows a later `Proceed with next task.` instruction to select and execute one approved, eligible task without a new owner-supplied restatement of its scope, paths, deliverables, acceptance criteria, or validation requirements.
+Phase 2 establishes repository-native executable task authority through a versioned task set and deterministic lifecycle rules.
 
-## Completion and Execution Authority
+## Completion and Closure Authority
 
-GitHub merged-pull-request evidence determines completed task state. Exactly one harness task may be executing or awaiting human review at any time.
+GitHub merged pull-request evidence determines completed task and gate-attempt state. Exactly one harness task may be executing or awaiting human review at a time. A phase closes only through the qualifying-gate conditions in `TASK-ELIGIBILITY-AND-COMPLETION-RULES.md`; a merged gate attempt alone is not a phase closure.
 
-P2-T01 is the Phase 2 setup task. It is complete only when its pull request merges. After P2-T01 merges, a later explicit `Proceed with next task.` instruction is sufficient to authorize execution of the one next eligible Phase 2 task defined in this register and its executable task-definition file.
+## Completed Initial Sequence
 
-## Approved Phase 2 Sequence
-
-| Sequence | Task ID | Title | Executable authority |
+| Sequence | Task ID | Title | Evidence |
 | --- | --- | --- | --- |
-| 1 | P2-T01 | Create the Phase 2 executable task authority set | This setup task; complete only when its PR merges |
-| 2 | P2-T02 | Define executable task-definition format | `docs/development/harness/tasks/P2-T02.md` |
-| 3 | P2-T03 | Define task eligibility and completion derivation rules | `docs/development/harness/tasks/P2-T03.md` |
-| 4 | P2-T04 | Define rolling task-replenishment and queue-exhaustion rules | `docs/development/harness/tasks/P2-T04.md` |
-| 5 | P2-GATE-01 | Review and close Phase 2 | `docs/development/harness/tasks/P2-GATE-01.md` |
+| 1 | P2-T01 | Create the Phase 2 executable task authority set | PR #10 merged |
+| 2 | P2-T02 | Define executable task-definition format | PR #11 merged |
+| 3 | P2-T03 | Define task eligibility and completion derivation rules | PR #13 merged |
+| 4 | P2-T04 | Define rolling task-replenishment and queue-exhaustion rules | PR #15 merged |
+| 5 | P2-GATE-01 | Review and close Phase 2 | PR #16 merged; blocked gate attempt |
+
+## P2-GATE-01 Result
+
+P2-GATE-01 / PR #16 is a merged blocked gate attempt. It is valid evidence that the review task completed, but it is not the qualifying Phase 2 closure gate because its report contains Blocked criteria and does not recommend closure. Phase 2 remains active; PR #16 does not unlock Phase 3 or authorize corrective work by itself.
+
+## Authorized Corrective Queue
+
+P2-R03 is directly authorized by the Project Owner to reconcile the lifecycle conflict and author the remaining corrective definitions. It does not execute P2-R04 or P2-GATE-02, close Phase 2, or authorize Phase 3.
+
+| Sequence | Task ID | Title | Eligibility |
+| --- | --- | --- | --- |
+| 6 | P2-R03 | Reconcile Phase 2 gate lifecycle semantics and define the corrective queue | Current directly authorized task |
+| 7 | P2-R04 | Repair Phase 2 gate findings | The only next eligible corrective task after P2-R03 merges and a later explicit `Proceed with next task.` instruction. |
+| 8 | P2-GATE-02 | Re-review and close Phase 2 | The only qualifying Phase 2 closure gate; eligible only after P2-R04 merges and a later explicit `Proceed with next task.` instruction. |
 
 ```text
-P2-T01 → P2-T02 → P2-T03 → P2-T04 → P2-GATE-01
+P2-GATE-01 (merged blocked attempt) → P2-R03 → P2-R04 → P2-GATE-02 (qualifying closure gate)
 ```
 
-## One-Time Corrective Repair: P2-R01
+No additional Phase 2 task may be selected while P2-R03 is active or awaiting review. After P2-R03 merges, P2-R04 is the sole next eligible task if normal eligibility conditions pass. After P2-R04 merges, P2-GATE-02 is the sole qualifying closure gate if normal eligibility conditions pass.
 
-P2-R01 — Repair P2-T03 executable task-definition compliance — is a one-time bounded repair authorized before P2-T03 execution. Its predecessor basis is merged P2-T02 evidence and the identified missing Task-state authority field in `docs/development/harness/tasks/P2-T03.md`.
+## Qualifying Closure Gate
 
-- P2-R01 changes only this register and `docs/development/harness/tasks/P2-T03.md`.
-- P2-R01 does not alter the approved Phase 2 sequence and does not replace P2-T03.
-- P2-T03 remains blocked until a valid P2-R01 pull request is merged.
-- After P2-R01 merges, a later explicit `Proceed with next task.` instruction may select P2-T03 only if all normal eligibility conditions pass.
+P2-GATE-02 is the only qualifying Phase 2 closure gate. Phase 2 closes only when P2-GATE-02 is designated by this register, its PR merges, its report records every required closure criterion as Pass, and its report explicitly recommends closure. A P2-GATE-02 report with any Fail or Blocked criterion does not close Phase 2 and requires separate explicit Project Owner authorization before further corrective work.
 
-## One-Time Corrective Repair: P2-R02
+## Completed Corrective Repairs
 
-P2-R02 — Repair remaining Phase 2 task-definition compliance — is a one-time bounded repair authorized before P2-T04 execution. Its predecessor basis is merged P2-T03 evidence and the missing Task-state authority fields in `docs/development/harness/tasks/P2-T04.md` and `docs/development/harness/tasks/P2-GATE-01.md`.
-
-- P2-R02 changes only this register, `docs/development/harness/tasks/P2-T04.md`, and `docs/development/harness/tasks/P2-GATE-01.md`.
-- P2-R02 does not alter the approved Phase 2 sequence and does not replace P2-T04 or P2-GATE-01.
-- P2-R02 does not execute P2-T04 or P2-GATE-01.
-- P2-T04 remains blocked until a valid P2-R02 pull request is merged.
-- P2-GATE-01 remains unavailable until P2-T04 is merged and all normal gate prerequisites are satisfied.
-- After P2-R02 merges, a later explicit `Proceed with next task.` instruction may select P2-T04 only if all normal eligibility conditions pass.
-
-## Phase 2 Gate Review: P2-GATE-01
-
-| Task | Merged completion evidence |
-| --- | --- |
-| P2-T01 | PR #10 |
-| P2-T02 | PR #11 |
-| P2-T03 | PR #13 |
-| P2-T04 | PR #15 |
-
-P2-GATE-01 is awaiting human review through its gate PR. `docs/development/harness/PHASE-2-GATE-REPORT.md` records the current gate findings.
-
-- The completion evidence above establishes P2-T01 through P2-T04 completion only.
-- The current gate report contains Blocked closure criteria; therefore Phase 2 remains active and is not closed.
-- Only a P2-GATE-01 PR whose gate report concludes that all closure criteria pass, and which then merges, may close Phase 2.
-- A blocked gate report does not authorize Phase 3 or create corrective work; any corrective work requires separate explicit Project Owner authorization.
-
-## Executable Task Definitions
-
-Each remaining Phase 2 task has a separate executable task-definition file under `docs/development/harness/tasks/`. Those files provide the bounded paths, authority documents, deliverables, acceptance criteria, validation, and stop conditions required for execution.
-
-A task is eligible only when its predecessor is completed by merged-PR evidence, the task is in the active phase, no other harness task is executing or awaiting human review, and its executable authority is complete.
+- P2-R01 repaired P2-T03 authority before P2-T03 execution.
+- P2-R02 repaired P2-T04 and P2-GATE-01 authority before P2-T04 execution.
 
 ## Phase 3 Lock
 
-**Phase 3 remains locked.** It has no authorized tasks, task register, executable task definition, scope, implementation plan, or deliverable.
+**Phase 3 remains locked.** It has no authorized task register, task definitions, scope, implementation plan, product or architecture authority, or deliverable.
 
 ## Stop Condition
 
-After one PR for the active Phase 2 task is opened, the harness must stop. No later task may be selected or started until the active task's PR merges and a later explicit `Proceed with next task.` instruction is received.
+After one PR for the active Phase 2 task is opened, the harness must stop. No later task may be selected or started until the active task PR merges and a later explicit `Proceed with next task.` instruction is received.
