@@ -20,38 +20,34 @@ GitHub merged pull-request evidence determines completed task and gate-attempt s
 | 4 | P2-T04 | Define rolling task-replenishment and queue-exhaustion rules | PR #15 merged |
 | 5 | P2-GATE-01 | Review and close Phase 2 | PR #16 merged; blocked gate attempt |
 
-## P2-GATE-01 Result
+## P2-GATE-01 Historical Result
 
-P2-GATE-01 / PR #16 is a merged blocked gate attempt. It is valid evidence that the review task completed, but it is not the qualifying Phase 2 closure gate because its report contains Blocked criteria and does not recommend closure. Phase 2 remains active; PR #16 does not unlock Phase 3 or authorize corrective work by itself.
+P2-GATE-01 / PR #16 is a merged blocked gate attempt. It is valid evidence that the initial review task completed, but it is not the qualifying Phase 2 closure gate because its report contains Blocked criteria and does not recommend closure. It did not unlock Phase 3.
 
-## Authorized Corrective Queue
+## Completed Corrective Path
 
-P2-R03 is directly authorized by the Project Owner to reconcile the lifecycle conflict and author the remaining corrective definitions. It does not execute P2-R04 or P2-GATE-02, close Phase 2, or authorize Phase 3.
-
-| Sequence | Task ID | Title | Eligibility |
+| Sequence | Task ID | Title | Evidence |
 | --- | --- | --- | --- |
-| 6 | P2-R03 | Reconcile Phase 2 gate lifecycle semantics and define the corrective queue | Current directly authorized task |
-| 7 | P2-R04 | Repair Phase 2 gate findings | The only next eligible corrective task after P2-R03 merges and a later explicit `Proceed with next task.` instruction. |
-| 8 | P2-GATE-02 | Re-review and close Phase 2 | The only qualifying Phase 2 closure gate; eligible only after P2-R04 merges and a later explicit `Proceed with next task.` instruction. |
+| 6 | P2-R03 | Reconcile Phase 2 gate lifecycle semantics and define the corrective queue | PR #17 merged |
+| 7 | P2-R04 | Repair Phase 2 gate findings | PR #18 merged |
 
-```text
-P2-GATE-01 (merged blocked attempt) → P2-R03 → P2-R04 → P2-GATE-02 (qualifying closure gate)
-```
+P2-R03 established deterministic qualifying-gate lifecycle semantics. P2-R04 resolved the two P2-GATE-01 findings by completing P2-T02 task authority and clarifying that implementation-successor horizon rules do not block a qualifying final gate in a governance, documentation, or control phase.
 
-No additional Phase 2 task may be selected while P2-R03 is active or awaiting review. After P2-R03 merges, P2-R04 is the sole next eligible task if normal eligibility conditions pass. After P2-R04 merges, P2-GATE-02 is the sole qualifying closure gate if normal eligibility conditions pass.
+## P2-GATE-02 Qualifying Closure Gate
 
-## Qualifying Closure Gate
+| Sequence | Task ID | Title | Status |
+| --- | --- | --- | --- |
+| 8 | P2-GATE-02 | Re-review and close Phase 2 | Awaiting human review through the qualifying gate PR that carries the current Phase 2 gate report. |
 
-P2-GATE-02 is the only qualifying Phase 2 closure gate. Phase 2 closes only when P2-GATE-02 is designated by this register, its PR merges, its report records every required closure criterion as Pass, and its report explicitly recommends closure. A P2-GATE-02 report with any Fail or Blocked criterion does not close Phase 2 and requires separate explicit Project Owner authorization before further corrective work.
+P2-GATE-02 is the only qualifying Phase 2 closure gate. Its current gate report records every required closure criterion as Pass and explicitly recommends closure.
 
-## Completed Corrective Repairs
+Phase 2 remains active and is **not closed** while the P2-GATE-02 PR is open. Phase 2 closes only when that register-designated P2-GATE-02 PR merges with the all-Pass report and explicit closure recommendation. If the PR closes without merge, Phase 2 remains active and phase state must be recomputed from current GitHub evidence.
 
-- P2-R01 repaired P2-T03 authority before P2-T03 execution.
-- P2-R02 repaired P2-T04 and P2-GATE-01 authority before P2-T04 execution.
+No additional Phase 2 task may be selected while P2-GATE-02 is awaiting review. No Phase 3 work is selected, authorized, planned, or started by this gate review.
 
 ## Phase 3 Lock
 
-**Phase 3 remains locked.** It has no authorized task register, task definitions, scope, implementation plan, product or architecture authority, or deliverable.
+**Phase 3 remains locked and undefined.** It has no authorized task register, task definitions, scope, implementation plan, product or architecture authority, or deliverable.
 
 ## Stop Condition
 
