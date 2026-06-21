@@ -12,17 +12,19 @@ The **approved task queue** is the ordered set of tasks in the active phase regi
 
 ### Queue Horizon
 
-The **queue horizon** is the number of approved executable tasks that remain after the task currently being executed or awaiting review. A task that is blocked, lacks complete executable authority, has an unmet dependency, or belongs to another phase does not count toward the horizon.
+The **queue horizon** is the number of approved executable tasks that remain after the task currently being executed or awaiting review when a phase is subject to a successor-horizon requirement. A task that is blocked, lacks complete executable authority, has an unmet dependency, or belongs to another phase does not count toward the horizon.
 
-A phase gate is a closure task, not an implementation successor. A phase gate does not count toward the minimum approved-task horizon for an implementation phase.
+A phase gate is a closure task, not an implementation successor. A phase gate does not count toward the minimum approved-task horizon for an active implementation phase.
 
 ### Active Implementation Phase
 
-An **active implementation phase** is a phase explicitly authorized by the Project Owner to modify implementation work. A requirements, policy, task-authoring, or gate phase is not an implementation phase merely because it is active.
+An **active implementation phase** is a phase explicitly authorized by the Project Owner to modify implementation work. A requirements, policy, task-authoring, governance, documentation, control, or gate phase is not an implementation phase merely because it is active.
 
 ### Controlled Stop State
 
 A **controlled stop state** exists when the active phase has no ready task with complete executable authority that may be selected under the eligibility rules. It is a phase-control state, not a substitute for a task lifecycle state.
+
+A controlled stop caused solely by the implementation-successor horizon or phase-gate successor-horizon rule applies only to an active implementation phase.
 
 ## Minimum Approved-Task Horizon
 
@@ -35,7 +37,7 @@ The successor must:
 3. Be capable of becoming ready when its predecessor completion evidence exists.
 4. Not be blocked by missing, ambiguous, or conflicting authority.
 
-The horizon is assessed before selecting an implementation task, after opening its pull request, and after its pull request merges or closes. A phase may temporarily fall below the horizon only by entering the controlled stop state described below; it must not compensate by inferring, drafting, or starting unapproved work.
+The horizon is assessed before selecting an implementation task, after opening its pull request, and after its pull request merges or closes. An active implementation phase may temporarily fall below the horizon only by entering the controlled stop state described below; it must not compensate by inferring, drafting, or starting unapproved work.
 
 ## Queue Exhaustion and Absent Authority
 
@@ -44,7 +46,7 @@ The harness must enter the controlled stop state when any of the following appli
 - The active phase has no ready task with complete executable authority.
 - The next task in sequence is missing an executable definition, a required field, a required authority document, or a deterministic dependency rule.
 - The approved queue has no successor task beyond the current task in an active implementation phase.
-- The remaining candidate is a phase gate but no authorized implementation successor exists to satisfy the required horizon.
+- In an active implementation phase, the remaining candidate is a phase gate but no authorized implementation successor exists to satisfy the required horizon.
 - Repository evidence, phase identity, task sequence, task identity, or pull-request evidence is missing, ambiguous, or conflicting.
 
 In a controlled stop state, the harness must:
@@ -57,19 +59,27 @@ In a controlled stop state, the harness must:
 
 A merged pull request, an empty queue, elapsed time, an earlier conversation, or the absence of objections does not authorize replenishment.
 
+## Governance, Documentation, and Control Phase Completion
+
+A governance, documentation, or control phase may validly end with its register-designated qualifying gate as its final approved item. Such a phase does not require a successor implementation task merely because its final item is a gate.
+
+The absence of an implementation successor must not create a controlled stop for a governance, documentation, or control phase whose qualifying gate is ready under the eligibility and qualifying-gate lifecycle rules. The gate remains subject to its predecessor, complete-definition, active-phase, one-task-at-a-time, and qualifying-closure requirements.
+
 ## Replenishment Assessment
 
 The harness must assess queue horizon at these control points:
 
-- before executing a selected task;
-- after a task pull request is opened;
-- after a task pull request is merged or closed without merge;
-- before selecting a phase gate; and
-- whenever the current active phase or task authority changes.
+- before executing a selected implementation task;
+- after an implementation-task pull request is opened;
+- after an implementation-task pull request is merged or closed without merge;
+- before selecting a phase gate in an active implementation phase; and
+- whenever the current active implementation phase or its task authority changes.
 
 The assessment must use current GitHub pull-request evidence, the active phase register, executable task definitions, and applicable authority documents. Current GitHub evidence controls over stale task-status wording.
 
 If one or more approved executable successors satisfy the horizon, the harness follows the ordinary one-task-at-a-time selection rules. It does not pre-stage a successor while a task is active or awaiting review.
+
+For governance, documentation, and control phases, final-gate selection is derived from the eligibility and qualifying-gate lifecycle rules rather than the implementation-successor horizon.
 
 ## Bounded Planning and Task-Authoring Work
 
@@ -112,7 +122,7 @@ The harness must report the smallest bounded decision, contract, task-authoring 
 
 ## New Phases, New Scope, and Implementation Authorization
 
-A new phase, a new scope category, or implementation work requires explicit Project Owner authorization. A merged phase gate closes only the phase named by that gate; it does not activate a later phase, authorize task creation, or authorize implementation.
+A new phase, a new scope category, or implementation work requires explicit Project Owner authorization. A merged qualifying gate closes only the phase named by that gate; it does not activate a later phase, authorize task creation, or authorize implementation.
 
 A task register, planning artifact, or replenishment assessment may describe only authority that has already been approved. It cannot create Phase 3 or later authority by implication.
 
@@ -122,4 +132,4 @@ A bounded planning or task-authoring task follows the same one-task-at-a-time an
 
 ## Scope Boundary
 
-These rules do not create Phase 3 tasks, implementation tasks, product or architecture authority, repository settings, branch protections, workflows, CI configuration, scripts, or automation. They do not select, define, plan, or start P2-GATE-01 or any Phase 3 work.
+These rules do not create Phase 3 tasks, implementation tasks, product or architecture authority, repository settings, branch protections, workflows, CI configuration, scripts, or automation. They do not select, define, plan, or start P2-GATE-02 or any Phase 3 work.
