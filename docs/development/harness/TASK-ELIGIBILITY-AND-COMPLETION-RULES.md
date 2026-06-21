@@ -2,109 +2,82 @@
 
 ## Purpose and Scope
 
-This document defines deterministic rules for deriving harness task state and selecting exactly one eligible task from repository-native authority. It is a control-policy document only. It does not configure GitHub, branch protections, CI, workflows, scripts, or implementation work.
+This document defines deterministic rules for deriving task, gate-attempt, and phase state and selecting exactly one eligible harness task from repository-native authority. It is control policy only; it does not configure GitHub, CI, workflows, scripts, or implementation work.
 
 ## Evidence Sources and Precedence
 
-Task state is derived from current repository evidence in the following order:
+State is derived in this order:
 
-1. Current GitHub pull-request evidence determines review state and completion.
-2. The active phase register determines the approved sequence, phase-gate identity, and any recorded one-time eligibility constraints.
-3. The executable task definition determines the task's scope, deliverable, acceptance criteria, validation, and stop condition.
-4. The executable-task-definition format determines whether a task definition is complete.
+1. Current GitHub pull-request evidence determines review state, task completion, and gate-attempt completion.
+2. The active phase register determines approved sequence, corrective path, qualifying closure gate, and phase state.
+3. A merged gate report determines whether closure criteria are Pass, Fail, or Blocked and whether it recommends closure.
+4. The executable definition determines a task's bounded authority.
+5. The executable-definition format determines completeness.
 
-A valid task pull request identifies exactly one approved task ID and phase and targets the repository default branch. A pull request with absent, conflicting, duplicated, or unapproved task identity creates an authority conflict.
+Current GitHub PR evidence controls over stale static status wording. Merged evidence alone cannot override the qualifying-gate-result rule for phase closure.
 
-Current GitHub pull-request evidence controls over static task-status wording in registers, definitions, reports, branches, commits, or checklists. Static prose cannot complete a task, satisfy a dependency, or override an open pull request.
+## Distinct Completion and Closure States
 
-## Derived Task States
+Task completion, gate-attempt completion, and phase closure are distinct.
 
-Each task has one lifecycle state: `blocked`, `ready`, `active`, `awaiting-review`, or `completed`. `phase-gate-pending` is a supplementary phase-control state; it does not replace the lifecycle state of the gate task.
+| State | Entry condition | Effect |
+| --- | --- | --- |
+| Completed task | Valid PR for the exact task merges into the default branch. | The task is not selected again normally. |
+| Completed gate attempt | Valid phase-gate PR merges. | Evidence of a completed review attempt only. |
+| Qualifying closure gate | The register designates the gate; its PR merges; its report records every required closure criterion as Pass; and its report explicitly recommends closure. | Closes only the named phase. |
+| Non-qualifying gate attempt | A merged gate has any Fail or Blocked criterion, lacks a closure recommendation, or is not register-designated. | Does not close the phase or unlock a later phase. |
 
-| State | Objective entry condition | Exit condition | Selection effect |
+Each task has one lifecycle state: `blocked`, `ready`, `active`, `awaiting-review`, or `completed`. `phase-gate-pending` is supplementary phase control.
+
+## Task Lifecycle States
+
+| State | Entry condition | Exit condition | Selection effect |
 | --- | --- | --- | --- |
-| `completed` | A valid pull request for the task is merged into the default branch. | None during normal derivation. Corrective work requires separately approved authority. | Never selected again. |
-| `awaiting-review` | The task is not completed and has a valid open task pull request. | The PR merges, or closes without merge and state is recomputed. | Blocks all new harness-task selection. |
-| `active` | This invocation selected the task as the sole ready task and work has started, but no task PR has been opened and no merged evidence exists. | A PR opens, merged evidence appears, or execution ends and state is recomputed later. | Blocks all other harness-task selection. |
-| `ready` | Every readiness condition in this document is true. | The task is selected, completed, receives an open task PR, or a readiness condition becomes false. | Eligible for one explicit selection command. |
-| `blocked` | The task is not completed, awaiting-review, active, or ready because at least one required condition is absent, invalid, or conflicting. | The blocking condition is resolved and state is recomputed. | Must not be selected, planned, pre-staged, or executed. |
-| `phase-gate-pending` | All required non-gate tasks are completed, the phase-gate definition is complete, and the phase gate is not completed. | The gate merges and closes the phase, or required gate evidence or authority becomes invalid and phase status is recomputed. | Only the gate may be considered under normal lifecycle rules; no later phase is authorized. |
+| `completed` | Valid PR for task merges. | None normally. | Never selected again. |
+| `awaiting-review` | Valid open task PR. | PR merges or closes without merge. | Blocks selection. |
+| `active` | This invocation selected the sole ready task and work started without a PR. | PR opens, merge evidence appears, or later recomputation. | Blocks selection. |
+| `ready` | All readiness conditions hold. | Selected, completed, given open PR, or condition changes. | Eligible for one explicit selection. |
+| `blocked` | Required condition is absent, invalid, ambiguous, or conflicting. | Condition resolves and state is recomputed. | Must not be selected or executed. |
 
-### Completed
+## Readiness and Blocking
 
-Completion is established only by valid GitHub merged-pull-request evidence for the exact task. Closed-but-unmerged pull requests, approvals, CI outcomes, reviews, branch commits, and status prose are not completion evidence.
+A task is ready only when it is in the approved active-phase sequence or corrective path; its definition is complete and matches the register; predecessor and recorded repair conditions are merged; it is not completed, active, or awaiting-review; no other harness task is active or awaiting-review; no identity-conflict PR is open; the phase is active under these rules; and, for a qualifying gate, all register-required completion evidence exists.
 
-### Awaiting-review
+Missing, invalid, ambiguous, or conflicting authority blocks a task. The harness must state the specific condition and must not infer omitted scope, successor work, validation, or later-phase authority.
 
-Opening a valid task pull request changes the task to `awaiting-review`. The harness must stop after opening it and must not approve, merge, or claim completion before merged evidence exists. If the pull request closes without merge, the task is not completed; eligibility is recomputed from current authority and evidence.
+## Gate Attempts and Phase Closure
 
-### Active
+A merged phase-gate PR is a completed gate attempt, not automatically a phase-closure event.
 
-`Active` exists only during the current harness execution after a valid `Proceed with next task.` instruction selected one ready task. It is not established by a branch or unmerged commit. A task cannot remain active across a later invocation without current execution evidence; it is recomputed as `ready` or `blocked` unless it has moved to `awaiting-review` or `completed`.
+A phase closes only when all of the following are true:
 
-### Ready
+1. The designated qualifying gate attempt is merged.
+2. Its gate report records every required closure criterion as Pass.
+3. Its report explicitly recommends phase closure.
+4. The active phase register identifies that attempt as the qualifying closure gate.
 
-A task is `ready` only when all of the following are true:
+A merged gate PR with any Blocked or Fail criterion does not close the phase, does not unlock a next phase, and remains valid evidence of a completed review attempt. Explicitly authorized corrective work is required before another gate attempt may occur.
 
-1. The task is in the approved sequence of the active phase.
-2. Its executable task definition is present, complete, internally consistent, and matches the task ID and phase in the register.
-3. Its direct predecessor has valid merged-pull-request completion evidence, or the definition explicitly states that it has no predecessor.
-4. Any additional one-time repair or eligibility condition recorded in the active phase register has valid merged completion evidence.
-5. The task is not `completed`, `active`, or `awaiting-review`.
-6. No other harness task is `active` or `awaiting-review`.
-7. No open pull request with missing or conflicting harness-task identity exists.
-8. The phase is active and has not closed through merged phase-gate evidence.
-9. For a phase gate, every task the gate requires as completion evidence is completed.
+A phase with a merged non-qualifying gate attempt remains active only when its register identifies an approved corrective path and a future qualifying gate task. Without both, phase state is blocked and no task may be selected.
 
-`Ready` means eligible for selection; it does not itself authorize work.
-
-### Blocked
-
-A task is `blocked` when any readiness requirement is unsatisfied or cannot be deterministically evaluated. Typical causes include an unmet predecessor, an incomplete or conflicting definition, a missing authority document, an inactive or ambiguous phase, an open task PR, an unresolved PR-identity conflict, or a required one-time repair that is not merged.
-
-The harness must report the specific unsatisfied condition and must not infer missing paths, deliverables, acceptance criteria, validation, dependencies, or later-phase authority.
-
-### Phase-gate-pending
-
-A phase enters `phase-gate-pending` when every non-gate task required by its approved sequence is completed, the gate definition is complete, and the gate has not completed. It exits when a valid gate pull request merges and closes the phase, or when required gate evidence or authority becomes invalid and phase state is recomputed. The gate task may be `ready`, `active`, or `awaiting-review` under the normal lifecycle rules.
-
-A phase does not close merely because it is phase-gate-pending or because its gate PR is open. A merged gate closes only that phase; it does not activate or authorize a later phase by implication.
+`phase-gate-pending` exists only when the register identifies a qualifying gate, all required preceding work is complete, and that qualifying gate has not completed. A merged non-qualifying gate attempt does not satisfy or exit this state.
 
 ## Completion, Dependency, and Definition Rules
 
-GitHub merged-pull-request evidence is the sole completion authority. A predecessor dependency is satisfied only by valid merged evidence for the exact predecessor task.
+GitHub merged pull-request evidence is the sole completion authority for an exact task. A predecessor is satisfied only by valid merged evidence for that predecessor.
 
-A task definition is complete only when it contains the metadata and narrative sections required by `EXECUTABLE-TASK-DEFINITION-FORMAT.md`: task ID, phase, title, task type, predecessor dependency, task-state authority, purpose, exact allowed paths, forbidden scope, required authority documents, required deliverable, acceptance criteria, required validation, stop condition, and later-task boundary.
+A task definition is complete only when it contains: task ID, phase, title, task type, predecessor dependency, task-state authority, purpose, exact allowed paths, forbidden scope, required authority documents, deliverable, acceptance criteria, validation, stop condition, and later-task boundary. A missing or invalid required field blocks execution.
 
-A missing, invalid, ambiguous, or conflicting required definition field blocks task execution. The task register alone does not supply omitted task-level authority.
+## Active-Phase Derivation and Selection
 
-## Active-Phase Derivation
+A phase is active when its register authorizes execution and it has not closed through a qualifying closure gate. A later phase is not activated by any gate attempt, phase closure, empty queue, or absence of an earlier phase without explicit register authority.
 
-A phase is active only when its approved register authorizes execution and no valid merged pull request exists for the phase gate that its register defines as closing the phase. The current repository must identify one unambiguous active phase for selection to proceed.
-
-If zero phases, multiple phases, or conflicting phase-gate evidence appear active, task selection is blocked until approved repository authority resolves the conflict. A later phase is not activated by the closure, absence, or incomplete authority of an earlier phase.
-
-## Selection Procedure
-
-On an explicit `Proceed with next task.` instruction, the harness must:
-
-1. Refresh current GitHub pull-request evidence and read the applicable phase register, executable task definitions, and required authority documents from the default branch.
-2. Derive the active phase and each approved task's lifecycle state using these rules.
-3. Stop without selecting work if any harness task is `active` or `awaiting-review`, or if an authority conflict prevents reliable derivation.
-4. Build the set of `ready` tasks in the active phase.
-5. Select exactly one task: the ready task with the lowest approved sequence number.
-6. Treat a missing sequence, equal sequence numbers, or any other tie that prevents a unique selection as an authority conflict; select no task.
-7. Mark only the selected task `active` for the current execution and perform only its approved scope.
-8. Open at most one task PR, then stop. Do not select, plan, begin, or pre-stage a successor.
-
-A `Proceed with next task.` instruction does not authorize concurrent work, an out-of-sequence task, a phase transition, or scope missing from the selected task's executable authority.
+On an explicit `Proceed with next task.` instruction, refresh PR evidence and authority documents, derive phase and task state, stop for any open task PR or authority conflict, select the one lowest approved ready item, perform only its approved scope, open at most one PR, and stop.
 
 ## Open Pull-Request Lock
 
-Any open valid harness task pull request creates a repository-wide harness selection lock. While the lock exists, no other task is ready, no successor or concurrent task may be selected, and the harness must await human review and merge or closure of the open pull request.
-
-An open pull request with missing or conflicting task identity also creates a selection lock. The harness must report the conflict rather than guess which task it represents.
+Any open valid harness task PR, or an open PR with missing or conflicting identity, creates a repository-wide selection lock.
 
 ## Scope Boundary
 
-These rules define task-state derivation only. They do not configure or claim enforcement of GitHub settings, branch protections, human approval, CI, workflows, scripts, or automated validation. They do not select, define, plan, or start P2-T04, P2-GATE-01, or any Phase 3 work.
+These rules do not configure GitHub, CI, workflows, scripts, or automated enforcement. They do not create Phase 3 authority or select, define, plan, or start Phase 3 work.

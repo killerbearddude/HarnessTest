@@ -4,12 +4,12 @@
 
 - **Phase:** Phase 2 — Establish Executable Task Authority
 - **Gate task:** P2-GATE-01 — Review and close Phase 2
-- **Review status:** Blocked — current evidence does not support closing Phase 2
+- **Gate-attempt status:** Merged blocked gate attempt — not a qualifying closure gate
 - **Repository baseline:** `main` after P2-T04 merged in PR #15
 
 ## Scope and Evidence Rule
 
-This report evaluates only whether the current repository evidence satisfies the P2-GATE-01 gate criteria. GitHub merged pull-request evidence determines task completion. Current GitHub pull-request evidence controls over static status wording. This report does not repair task definitions, create successor work, configure GitHub or CI, or authorize Phase 3.
+This report evaluates only whether the repository evidence satisfied the P2-GATE-01 review criteria. GitHub merged pull-request evidence determines task and gate-attempt completion. Current GitHub pull-request evidence controls over static status wording. This report does not repair task definitions, create successor work, configure GitHub or CI, or authorize Phase 3.
 
 ## Merged Task Evidence
 
@@ -22,7 +22,7 @@ This report evaluates only whether the current repository evidence satisfies the
 
 The Phase 2 sequence is complete through P2-T04 by merged pull-request evidence. Completion evidence alone does not establish that every gate criterion is satisfied.
 
-## Gate Criteria
+## Historical Gate Criteria
 
 | Criterion | Result | Evidence and finding |
 | --- | --- | --- |
@@ -34,13 +34,17 @@ The Phase 2 sequence is complete through P2-T04 by merged pull-request evidence.
 | Phase 2 scope boundaries are preserved | Pass | The Phase 2 register keeps Phase 3 locked. The reviewed Phase 2 work does not authorize game implementation, GitHub configuration, workflows, CI, scripts, or Phase 3 task definitions. |
 | Phase 2 closure is supported | Blocked | The two blocked criteria above prevent a closure recommendation. |
 
+## Lifecycle Clarification After PR #16
+
+PR #16 is a merged blocked gate attempt. It completed P2-GATE-01 as a review task, but it is not the qualifying Phase 2 closure gate and does not itself close Phase 2.
+
+The historical findings above remain unchanged. Their substantive corrections are deferred to P2-R04. A later qualifying gate attempt, P2-GATE-02, is required before Phase 2 can close. P2-GATE-02 may recommend closure only when every required closure criterion is Pass.
+
 ## Closure Decision
 
-**Current evidence does not support closing Phase 2.**
+**PR #16 does not support closing Phase 2.**
 
-P2-GATE-01 is awaiting human review through this gate PR. This report must not be used as a Phase 2 closure recommendation while any gate criterion is Blocked. A Phase 2 closure requires a P2-GATE-01 review with all gate criteria passing and merged GitHub evidence for that qualifying gate PR.
-
-The smallest bounded follow-up needed before closure is explicit owner authorization for corrective work that resolves the blocked findings. This report does not create, select, plan, or start that corrective work.
+Phase 2 remains active under the corrected lifecycle rules. The register identifies P2-R04 as the approved corrective path and P2-GATE-02 as the future qualifying closure gate. This report does not itself close Phase 2 or authorize Phase 3.
 
 ## Phase 3 Boundary
 
@@ -48,11 +52,11 @@ The smallest bounded follow-up needed before closure is explicit owner authoriza
 
 ## Validation Record
 
-- Inspected merged PR evidence for P2-T01 through P2-T04.
-- Inspected the Phase 2 register, P2-T02 through P2-GATE-01 definitions, executable task-definition format, eligibility/completion rules, and replenishment/queue-exhaustion rules.
-- Recorded every gate criterion as Pass or Blocked with repository evidence.
+- Inspected merged PR evidence for P2-T01 through P2-T04 and PR #16.
+- Preserved each historical gate criterion result and its evidence.
+- Recorded the post-merge lifecycle clarification and deferred corrective path.
 - Runtime, repository-configuration, CI, workflow, and script validation are intentionally not applicable and not authorized for this documentation gate.
 
 ## Stop Boundary
 
-This report is a review artifact only. It does not approve, merge, or close Phase 2. No Phase 3 work is selected or started.
+This report is historical gate-review evidence. It does not approve, merge, or close Phase 2. No P2-R04, P2-GATE-02, or Phase 3 work is selected or started.
