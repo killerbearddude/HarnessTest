@@ -26,20 +26,31 @@ Implement and verify the repository-protection and pull-request/CI enforcement r
 
 Before the Phase 3 planning PR merges, Phase 3 is `planned` and no Phase 3 task may be selected. After that PR merges, Phase 3 is active under this register.
 
-After activation, a later explicit `Proceed with next task.` instruction may select only the lowest ready Phase 3 task. P3-T01 is the sole initial ready task. P3-T02, P3-T03, and P3-GATE-01 remain blocked until their direct predecessors have merged.
+P3-R01 is a one-time corrective task directly authorized by the Project Owner to repair P3-T02's external-configuration evidence boundary. P3-R01 does not configure GitHub settings, create the P3-T02 evidence report, or execute P3-T02.
+
+P3-T02 remains blocked until all of the following are true:
+
+1. P3-T01 has merged;
+2. P3-R01 has merged; and
+3. a valid current Project Owner protected-default-branch configuration attestation exists under `docs/development/harness/tasks/P3-T02.md`.
+
+After P3-R01 merges and the valid attestation exists, a later explicit `Proceed with next task.` instruction may select P3-T02. P3-T03 and P3-GATE-01 remain unavailable until their direct predecessors have merged. No task beyond P3-T02 may be selected during P3-R01.
 
 ## Approved Sequence
 
 | Sequence | Task ID | Title | Executable authority |
 | --- | --- | --- | --- |
 | 1 | P3-T01 | Implement pull-request and CI enforcement | `docs/development/harness/tasks/P3-T01.md` |
-| 2 | P3-T02 | Configure protected default-branch enforcement | `docs/development/harness/tasks/P3-T02.md` |
+| corrective | P3-R01 | Repair P3-T02 external-configuration evidence boundary | Direct Project Owner authorization; this register; `docs/development/harness/tasks/P3-T02.md` |
+| 2 | P3-T02 | Record and verify Project Owner protected-default-branch configuration | `docs/development/harness/tasks/P3-T02.md` |
 | 3 | P3-T03 | Verify repository-enforcement requirements | `docs/development/harness/tasks/P3-T03.md` |
 | 4 | P3-GATE-01 | Review and close Phase 3 | `docs/development/harness/tasks/P3-GATE-01.md` |
 
 ```text
-P3-T01 → P3-T02 → P3-T03 → P3-GATE-01
+P3-T01 → P3-R01 → P3-T02 → P3-T03 → P3-GATE-01
 ```
+
+P3-R01 is a corrective prerequisite, not a later-phase or implementation task. Its completion is established only by the merged pull request that identifies `P3-R01` as its task identity.
 
 ## Qualifying Gate Authority
 
