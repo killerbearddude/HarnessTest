@@ -43,9 +43,34 @@ jobs:
               '## Human-review boundary'
             ];
 
+            function taskIdentities(markdown) {
+              return [...(markdown || '').matchAll(/\*\*Task:\*\*\s*(P\d+-(?:T|GATE)-\d+)\b/gi)]
+                .map((match) => match[1].toUpperCase());
+            }
+
+            function soleTaskIdentity(markdown) {
+              const identities = taskIdentities(markdown);
+              return identities.length === 1 ? identities[0] : null;
+            }
+
+            function sectionContent(markdown, heading) {
+              const lines = (markdown || '').split(/\r?\n/);
+              const start = lines.findIndex((line) => line.trim().toLowerCase() === heading.toLowerCase());
+              if (start === -1) return '';
+              let end = lines.length;
+              for (let index = start + 1; index < lines.length; index += 1) {
+                if (/^##\s+/.test(lines[index])) {
+                  end = index;
+                  break;
+                }
+              }
+              return lines.slice(start + 1, end).join('\n').trim();
+            }
+
             for (const heading of requiredHeadings) {
-              if (!body.includes(heading)) {
-                errors.push(`Missing required PR section: ${heading}`);
+              const content = sectionContent(body, heading);
+              if (!content) {
+                errors.push(`Missing or empty required PR section: ${heading}`);
               }
             }
 
@@ -56,13 +81,51 @@ jobs:
               errors.push('PR must state: No additional task was selected or started.');
             }
 
-            const taskMatch = body.match(/\*\*Task:\*\*\s*(P\d+-(?:T|GATE)-\d+)/i);
+            const taskId = soleTaskIdentity(body);
             const phaseMatch = body.match(/\*\*Phase:\*\*\s*(Phase\s+\d+[^\n]*)/i);
-            if (!taskMatch) {
+            if (!taskId) {
               errors.push('PR must identify exactly one ordinary task with **Task:** P<phase>-T<n> or P<phase>-GATE-<n>.');
             }
             if (!phaseMatch) {
               errors.push('PR must identify exactly one phase with **Phase:** Phase <n>.');
+            }
+
+            const validation = sectionContent(body, '## Validation');
+            const validationRows = validation
+              .split(/\r?\n/)
+              .map((line) => line.trim())
+              .filter((line) => /^[-*]\s+/.test(line));
+            const acceptedValidationOutcome = /\*\*(?:passed|intentionally not applicable|intentionally unavailable before merge)\*\*/i;
+            if (validationRows.length === 0) {
+              errors.push('Validation must contain at least one evidence row.');
+            }
+            if (!validationRows.some((row) => /\b(?:command|inspect|validat|check|compar)/i.test(row))) {
+              errors.push('Validation must record at least one command, inspection, check, or comparison outcome.');
+            }
+            for (const row of validationRows) {
+              if (!acceptedValidationOutcome.test(row)) {
+                errors.push(`Validation evidence must state a successful or approved-not-applicable outcome: ${row}`);
+              }
+              if (/\*\*(?:failed|blocked)\*\*/i.test(row) || /\b(?:required\s+)?(?:validation|tests?|checks?)\b[^.\n]*\b(?:failed|failure|blocked)\b/i.test(row)) {
+                errors.push(`Required validation is not successful: ${row}`);
+              }
+            }
+            const testRows = validationRows.filter((row) => /\btests?(?:\s+status)?\s*:/i.test(row));
+            if (testRows.length === 0) {
+              errors.push('Validation must record a Tests: outcome or explicit intentional non-applicability.');
+            }
+            for (const row of testRows) {
+              if (!/\*\*(?:passed|intentionally not applicable)\*\*/i.test(row)) {
+                errors.push(`Tests must be passed or explicitly intentionally not applicable: ${row}`);
+              }
+            }
+
+            const internalReview = sectionContent(body, '## Internal review');
+            if (!/^[-*]\s+\*\*Result:\*\*\s*\S+/im.test(internalReview)) {
+              errors.push('Internal review must state a nonempty **Result:** outcome.');
+            }
+            if (/\*\*Result:\*\*[\s\S]*?\b(?:blocked|major)\b/i.test(internalReview)) {
+              errors.push('Internal review contains a blocked or major finding.');
             }
 
             const openPulls = await github.paginate(github.rest.pulls.list, {
@@ -81,11 +144,24 @@ jobs:
               errors.push(`Another harness PR is open: #${otherHarnessPulls.map((candidate) => candidate.number).join(', #')}.`);
             }
 
-            if (taskMatch && phaseMatch) {
-              const taskId = taskMatch[1].toUpperCase();
+            if (taskId && phaseMatch) {
               const phaseNumber = (phaseMatch[1].match(/Phase\s+(\d+)/i) || [])[1];
               const taskPath = `docs/development/harness/tasks/${taskId}.md`;
               const registerPath = `docs/development/harness/PHASE-${phaseNumber}-TASK-REGISTER.md`;
+
+              const closedPulls = await github.paginate(github.rest.pulls.list, {
+                owner,
+                repo,
+                state: 'closed',
+                base: 'main',
+                per_page: 100
+              });
+              const mergedTaskPulls = closedPulls.filter((candidate) =>
+                Boolean(candidate.merged_at) && soleTaskIdentity(candidate.body) === taskId
+              );
+              if (mergedTaskPulls.length > 0) {
+                errors.push(`Task ${taskId} already has merged PR evidence: #${mergedTaskPulls.map((candidate) => candidate.number).join(', #')}.`);
+              }
 
               async function readText(path) {
                 const response = await github.rest.repos.getContent({
@@ -154,19 +230,12 @@ jobs:
                 const predecessorMatch = definition.match(/\*\*Predecessor dependency:\*\*\s*([^\n]+)/i);
                 const predecessor = predecessorMatch ? predecessorMatch[1].match(/\bP\d+-(?:T|GATE)-\d+\b/i) : null;
                 if (predecessor) {
-                  const closedPulls = await github.paginate(github.rest.pulls.list, {
-                    owner,
-                    repo,
-                    state: 'closed',
-                    base: 'main',
-                    per_page: 100
-                  });
+                  const predecessorId = predecessor[0].toUpperCase();
                   const mergedPredecessor = closedPulls.some((candidate) =>
-                    Boolean(candidate.merged_at) &&
-                    new RegExp(`\\b${predecessor[0]}\\b`, 'i').test(`${candidate.title || ''}\n${candidate.body || ''}`)
+                    Boolean(candidate.merged_at) && soleTaskIdentity(candidate.body) === predecessorId
                   );
                   if (!mergedPredecessor) {
-                    errors.push(`Predecessor ${predecessor[0]} does not have merged PR evidence.`);
+                    errors.push(`Predecessor ${predecessorId} does not have exact merged task evidence.`);
                   }
                 }
 
@@ -200,5 +269,5 @@ jobs:
             if (errors.length > 0) {
               core.setFailed(errors.join('\n'));
             } else {
-              core.notice('Harness PR evidence, task authority, predecessor evidence, and changed-file scope are valid.');
+              core.notice('Harness PR evidence, exact task lifecycle, and substantive required evidence are valid.');
             }
