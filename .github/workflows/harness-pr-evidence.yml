@@ -1,0 +1,136 @@
+name: Harness PR Evidence
+
+on:
+  pull_request_target:
+    branches:
+      - main
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+      - ready_for_review
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  validate-pr-evidence:
+    name: Harness PR Evidence
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate generic task identity and evidence
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const core = require('@actions/core');
+            const { owner, repo } = context.repo;
+            const pr = context.payload.pull_request;
+            const body = pr.body || '';
+            const errors = [];
+            const identityPattern = /^[A-Z][A-Z0-9-]*-(?:PLAN|T|GATE)-\d+$/;
+
+            function section(markdown, heading) {
+              const lines = markdown.split(/\r?\n/);
+              const start = lines.findIndex((line) => line.trim().toLowerCase() === heading.toLowerCase());
+              if (start === -1) return '';
+              let end = lines.length;
+              for (let index = start + 1; index < lines.length; index += 1) {
+                if (/^##\s+/.test(lines[index])) { end = index; break; }
+              }
+              return lines.slice(start + 1, end).join('\n').trim();
+            }
+
+            function taskIds(markdown) {
+              return [...markdown.matchAll(/^\s*-\s*\*\*Task:\*\*\s*([^\n]+)$/gmi)]
+                .map((match) => match[1].trim().toUpperCase());
+            }
+
+            const requiredSections = [
+              '## Task identity', '## Objective', '## Authority documents',
+              '## Files changed', '## Files intentionally not changed',
+              '## Validation', '## Known limitations', '## Deferred work',
+              '## Internal review', '## Boundaries', '## Human-review boundary'
+            ];
+            for (const heading of requiredSections) {
+              if (!section(body, heading)) errors.push(`Missing or empty required PR section: ${heading}`);
+            }
+            if (!/human review and approval are required/i.test(body)) {
+              errors.push('PR must state that human review and approval are required.');
+            }
+            if (!/No additional task was selected or started\./i.test(body)) {
+              errors.push('PR must state: No additional task was selected or started.');
+            }
+
+            const identities = taskIds(body);
+            if (identities.length !== 1 || !identityPattern.test(identities[0])) {
+              errors.push('PR must declare exactly one generic task identity: <PROGRAM>-PLAN-<NN>, <PROGRAM>-T<NN>, or <PROGRAM>-GATE-<NN>.');
+            }
+            const taskId = identities[0];
+            const phase = (body.match(/^\s*-\s*\*\*Phase:\*\*\s*(\S.*)$/mi) || [])[1];
+            if (!phase) errors.push('PR must declare a nonempty **Phase:** value.');
+
+            const validationRows = section(body, '## Validation').split(/\r?\n/)
+              .map((line) => line.trim()).filter((line) => /^[-*]\s+/.test(line));
+            if (validationRows.length === 0) errors.push('Validation must contain evidence rows.');
+            for (const row of validationRows) {
+              if (/\b(?:failed|blocked)\b/i.test(row)) errors.push(`Validation evidence is not successful: ${row}`);
+            }
+
+            const openPulls = await github.paginate(github.rest.pulls.list, {
+              owner, repo, state: 'open', base: 'main', per_page: 100
+            });
+            const otherHarness = openPulls.filter((candidate) => candidate.number !== pr.number && taskIds(candidate.body || '').some((id) => identityPattern.test(id)));
+            if (otherHarness.length > 0) errors.push(`Another harness PR is open: #${otherHarness.map((candidate) => candidate.number).join(', #')}.`);
+
+            const closedPulls = await github.paginate(github.rest.pulls.list, {
+              owner, repo, state: 'closed', base: 'main', per_page: 100
+            });
+            if (taskId && closedPulls.some((candidate) => Boolean(candidate.merged_at) && taskIds(candidate.body || '').length === 1 && taskIds(candidate.body || '')[0] === taskId)) {
+              errors.push(`Task ${taskId} already has exact merged PR evidence.`);
+            }
+
+            const definitionPath = (body.match(/^\s*-\s*\*\*Task definition:\*\*\s*`([^`]+)`\s*$/mi) || [])[1];
+            const registerPath = (body.match(/^\s*-\s*\*\*Active register:\*\*\s*`([^`]+)`\s*$/mi) || [])[1];
+            const isDirectPlan = /-\s*\*\*Direct authority:\*\*\s*Direct Project Owner authorization/i.test(body);
+
+            async function readText(path) {
+              const response = await github.rest.repos.getContent({ owner, repo, path, ref: pr.base.sha });
+              if (Array.isArray(response.data) || response.data.type !== 'file') throw new Error(`${path} is not a file.`);
+              return Buffer.from(response.data.content, response.data.encoding).toString('utf8');
+            }
+
+            if (!isDirectPlan && (!definitionPath || !registerPath)) {
+              errors.push('Ordinary or gate task PRs must declare **Task definition:** and **Active register:** repository paths.');
+            }
+            if (isDirectPlan && !/Direct Project Owner authorization/i.test(section(body, '## Authority documents'))) {
+              errors.push('Direct planning PR must cite Direct Project Owner authorization in Authority documents.');
+            }
+
+            if (definitionPath && registerPath && taskId) {
+              try {
+                const [definition, register] = await Promise.all([readText(definitionPath), readText(registerPath)]);
+                if (!definition.includes(`**Task ID:** ${taskId}`)) errors.push(`Task definition does not declare ${taskId}.`);
+                const authorityIndex = definition.indexOf('**Task-state authority:**');
+                const purposeIndex = definition.indexOf('## Purpose');
+                if (authorityIndex === -1 || purposeIndex === -1 || authorityIndex > purposeIndex) errors.push('Task definition must place Task-state authority before Purpose.');
+                if (!new RegExp(`\\|[^\\n]*\\|\\s*${taskId}\\s*\\|`, 'i').test(register)) errors.push(`Active register does not list ${taskId}.`);
+
+                const allowedSection = section(definition, '## Allowed Paths');
+                const allowed = [...allowedSection.matchAll(/`([^`]+)`/g)].map((match) => match[1]);
+                const files = await github.paginate(github.rest.pulls.listFiles, { owner, repo, pull_number: pr.number, per_page: 100 });
+                const matches = (file, pattern) => pattern.endsWith('/**') ? file.startsWith(pattern.slice(0, -2)) : file === pattern;
+                if (allowed.length === 0) errors.push('Task definition has no machine-readable allowed path.');
+                for (const file of files) {
+                  if (!allowed.some((pattern) => matches(file.filename, pattern))) errors.push(`Changed file is outside declared task scope: ${file.filename}`);
+                }
+              } catch (error) {
+                errors.push(`Unable to validate task definition or register: ${error.message}`);
+              }
+            }
+
+            if (errors.length > 0) core.setFailed(errors.join('\n'));
+            else core.notice('Generic harness PR identity and evidence are valid.');
+
+            // This workflow runs only after a pull request exists. It does not gate feature-branch creation.
