@@ -1,174 +1,83 @@
 # Harness Control Boundary
 
-**Document ID:** HARNESS-POLICY-001  
-**Status:** Proposed — effective when merged to the protected default branch  
+**Document ID:** HARNESS-TEMPLATE-POLICY-001  
+**Status:** Generic template control policy  
 **Owner:** Project Owner  
-**Scope:** Autonomous development-harness operating boundary  
-**Applies to:** All harness-driven task selection, system planning, validation, review, branch, and pull-request activity
+**Scope:** Source-backed task planning, execution, review, retirement, and external-control boundaries
 
----
+## Purpose
 
-## 1. Purpose
+This policy governs a reusable development harness. It converts approved project source documents into bounded repository authority without inventing product direction, architecture, contracts, implementation behavior, or project scope.
 
-This document defines the operating boundary for the project development harness. The harness advances the repository through small, reviewable units while preserving human control over project direction, architecture, approval, merge decisions, and implementation authority.
-
-The operating loop is:
-
-1. The Project Owner instructs the harness to proceed.
-2. The harness selects at most one normal eligible task; only when no normal task is ready, it may select the single eligible roadmap-planning transition.
-3. The harness performs that one bounded unit.
-4. The harness validates and internally reviews it.
-5. The harness opens at most one pull request.
-6. The harness stops.
-7. A human reviews and squash-merges the pull request.
-8. The next Project Owner proceed instruction is required before another selection.
-
-A merged PR is completion evidence. It is not authorization to begin another ordinary task. A merged planning PR only activates its planned phase under its merged register; it still requires a later explicit `Proceed with next task.` before an executable task in that phase may be selected.
-
----
-
-## 2. Core Control Rules
-
-The following rules are mandatory:
-
-1. Only one harness work unit may be active, and only one valid harness PR may be open, at a time.
-2. The harness must stop after opening a PR.
-3. The harness must not merge, approve, self-approve, enable auto-merge, or otherwise finalize a PR.
-4. The Project Owner remains the final approval authority for every PR and phase gate.
-5. The protected remote default branch and current GitHub PR state are authoritative repository state.
-6. The harness must not push directly to protected `main`, bypass protection, or force-push a shared or protected branch.
-7. The harness must not begin implementation outside an approved executable task in an authorized active phase.
-8. A phase closes only through its qualifying merged gate under `TASK-ELIGIBILITY-AND-COMPLETION-RULES.md`.
-9. A later phase is not activated by a gate attempt, empty queue, or stale prose; it becomes active only under a merged phase register.
-10. System planning may occur only through an eligible `SYS-PLAN-NEXT-TRANCHE` transition governed by `SYSTEM-PLANNING-RULES.md` and `PHASE-ROADMAP.md`.
-11. The harness must not invent product, architecture, contract, game-design, evaluator, content, diagnostics, persistence, UI, or implementation behavior.
-
----
-
-## 3. Authority Order
-
-When information conflicts, the harness must use this precedence order:
-
-1. Explicit current instruction from the Project Owner.
-2. GitHub branch protection, required reviews, required checks, and repository access controls.
-3. Approved project design documents and approved contracts.
-4. The applicable phase register, qualifying-gate state, and approved phase roadmap.
-5. `SYSTEM-PLANNING-RULES.md` for the system transition.
-6. The active executable task definition, including scope and acceptance criteria.
-7. Current protected default-branch state and GitHub PR state.
-8. Repository tests, CI configuration, and validation scripts.
-9. Local working-tree state.
-10. Chat history, summaries, notes, and uncommitted assumptions.
-
-The harness must stop and report a conflict when higher-authority sources disagree. It must not resolve conflict by inventing behavior.
-
----
-
-## 4. Explicit Commands
-
-### 4.1 Proceed Command
-
-An instruction such as:
+The required authority flow is:
 
 ```text
-Proceed with next task.
+approved source documents → source manifest → roadmap → full task catalog
+→ executable horizon → one-task PR loop
 ```
 
-authorizes the harness to synchronize protected-default-branch state, inspect GitHub PR and CI state, derive normal task eligibility, and select exactly one bounded work unit.
+A task catalog is long-range planning, not execution permission. An executable horizon is the small, fully specified subset that may be selected under an active register.
 
-Selection priority is mandatory:
+## Core Rules
 
-1. Select the single lowest eligible normal executable task when one exists.
-2. Only when no normal task is ready, evaluate `SYS-PLAN-NEXT-TRANCHE`.
-3. Select the system transition only when every trigger in `SYSTEM-PLANNING-RULES.md` passes and `PHASE-ROADMAP.md` identifies exactly one phase `ready_for_planning`.
-4. Otherwise stop and report the smallest missing roadmap, source authority, product, architecture, contract, or Project Owner decision.
+1. Only one harness work unit may be active and only one valid harness PR may be open at a time.
+2. The harness stops after opening a PR.
+3. The harness never merges, approves, self-approves, enables auto-merge, bypasses protection, or pushes directly to a protected default branch.
+4. Current protected-default-branch and GitHub PR state are authoritative over stale prose.
+5. The Project Owner is final approval authority for source documents, external controls, phase retirement, PR review, and phase gates.
+6. The harness may execute only an approved executable task in an active authority register, or a direct bounded Project Owner task.
+7. The harness may modify only the selected task's exact allowed paths.
+8. The harness must report failed, unavailable, owner-attested, and independently observed evidence without conflation.
+9. The harness cannot invent project direction, architecture, contracts, product scope, validation commands, implementation behavior, or successor tasks.
+10. Every PR must state that no additional task was selected or started.
 
-A proceed command does not authorize multiple tasks, concurrent work, automatic implementation, scope expansion, planning for a locked phase, merge or approval activity, or speculative work.
+## Authority Order
 
-### 4.2 Review Command
+When sources conflict, apply this order:
 
-A review command authorizes read-only review of the currently open harness PR. It does not authorize new work, commits, task selection, planning, merge, approval, or phase advancement.
+1. Current explicit Project Owner decision.
+2. GitHub repository access controls and protected-default-branch state.
+3. Approved project source documents and their source-manifest status.
+4. Active conversion or project register, roadmap, and full task catalog.
+5. Active executable task definition.
+6. Repository-native validation and CI evidence.
+7. Chat history and summaries.
 
-### 4.3 No Implied Proceeding
+A conflict at a higher level requires a controlled stop; the harness must not resolve it by inference.
 
-A merged PR, GitHub approval, positive review, idle period, prior conversation, empty queue, or absence of objections does not authorize another normal task. Only a later explicit proceed command permits selection.
+## Project Bootstrap and Task Selection
 
----
+Before implementation begins in a new project, the project must have:
 
-## 5. One-Work-Unit-at-a-Time Rule
+1. approved source documents;
+2. a source manifest that identifies each document's authority and status;
+3. a source-backed phase roadmap;
+4. a complete task catalog; and
+5. a merged active register containing only the first three to five executable definitions and one qualifying gate.
 
-The harness may be in only one of these states:
+On `Proceed with next task.`, the harness refreshes repository state, checks for an open PR, derives readiness from the active register and exact predecessor evidence, selects the lowest eligible task, performs only that task, opens one PR, and stops. A merged PR never authorizes automatic successor selection.
 
-| State | Meaning |
-| --- | --- |
-| Idle | No active normal task, system transition, or open harness PR. |
-| Executing | One selected normal task or system transition is being performed. |
-| Awaiting Human Review | One harness PR is open. |
-| Blocked | No safe selection is available under current authority. |
-| Phase Gate Pending | A qualifying phase-gate PR is awaiting human review. |
+The executable horizon may be replenished only from approved catalog entries with sufficient source authority. It may not be replenished from ad hoc prompts or inferred work.
 
-The harness must not begin another task, system transition, repair, implementation, or review change while Executing, Awaiting Human Review, Blocked, or Phase Gate Pending.
+## Pilot Retirement and Migration
 
-An open valid harness PR or an open PR with missing or conflicting harness identity blocks all selection.
+A direct Project Owner migration decision may retire a non-implementation pilot phase or pilot sequence without marking it completed. Retirement must:
 
----
+- preserve the affected documents, branches, PRs, and history through an archive or archive map;
+- state that retired work is not active authority and may not be selected again;
+- identify the successor active authority; and
+- state whether any project implementation phase remains active.
 
-## 6. Bounded Autonomous Actions
+Retirement is distinct from task completion and qualifying-gate closure. It does not create implementation authority, unlock later work, or erase pilot history.
 
-Within the scope of the selected normal task or eligible system transition, the harness may inspect repository and GitHub state, create one branch, edit only authorized paths, run permitted validation, perform internal review, and open one PR.
+After the template-conversion register merges, it is the active authority for this repository. The P0–P3 pilot sequence is historical only; Phase 3 is retired and cannot be resumed, selected, or treated as completed template work. No project implementation phase is active.
 
-For `SYS-PLAN-NEXT-TRANCHE`, the only additional authority is the bounded planning output in `SYSTEM-PLANNING-RULES.md`: one next-phase register, three to five complete task definitions, one qualifying gate definition, and necessary planning authority artifacts. The system transition may not create implementation or select a task it generates.
+## External Controls
 
----
+Repository settings, rulesets, approvals, bypasses, merge methods, organization policy, and similar external controls are a manual Project Owner bootstrap checkpoint unless a separately authorized task explicitly permits observation or administration. Repository-file and workflow controls are distinct from external administration. The harness must not represent inaccessible external settings as independently verified.
 
-## 7. Human Decision and Controlled-Stop Boundary
+## PR and Reporting Boundary
 
-The harness must stop and report the blocker when a PR opens; a required authority document is missing, contradictory, incomplete, or unclear; a task exceeds allowed paths; validation cannot pass inside approved scope; a valid PR already exists; roadmap eligibility is absent or ambiguous; source authority is insufficient; repository state is stale or conflicted; or a new product, architecture, contract, or strategic decision is required.
+Before opening a PR, the harness must validate allowed paths, authority, task definition completeness where applicable, dependency evidence, known limitations, and internal review. Every PR must identify the task, objective, authority, changed and intentionally unchanged files, validation outcomes, limitations, deferred work, review result, and human-review requirement.
 
-A completed phase is not by itself a stop when `SYS-PLAN-NEXT-TRANCHE` is eligible. A completed or empty phase with no eligible system transition remains a controlled stop.
-
-When stopped, the harness must report the active or most-recent phase, active task/PR if any, exact blocker, repository evidence, the smallest required decision or authority, and work it did not perform.
-
----
-
-## 8. Prohibited Actions
-
-The harness must never merge, approve, self-approve, bypass branch protection, push directly to protected `main`, force-push a shared/protected branch, begin a second unit while a PR is open, select a task from a locked or unplanned phase, treat an unmerged branch as completed work, treat chat memory as authoritative repository state, expand scope, hide failed validation, or invent unapproved strategic/domain behavior.
-
-The harness must not configure GitHub settings, branch protection, workflows, CI, scripts, or implementation unless an approved executable task explicitly authorizes that exact work.
-
----
-
-## 9. Scope, Validation, and PR Boundary
-
-Every ordinary executable task must define task ID, phase, purpose, allowed paths, forbidden scope, authority documents, deliverable, acceptance criteria, validation, stop condition, and later-task boundary. The harness may modify only allowed paths and must not broaden scope during execution.
-
-Before opening a PR, the selected unit must meet its acceptance criteria, required validation, allowed-path boundary, authority requirements, and internal review. Its PR must identify the selected task or system transition, objective, authority, changed and intentionally unchanged files, validation outcomes, known limitations, internal-review result, and the requirement for human review and squash merge.
-
-Every PR must state: `No additional task has been selected or started.`
-
----
-
-## 10. Phase and Roadmap Boundary Rules
-
-A phase is a bounded set of tasks with entry criteria, exit criteria, and a qualifying gate. The harness executes ordinary tasks only in an active phase under its merged register.
-
-A phase is complete only through its qualifying gate. A qualifying gate merge does not authorize implementation or select a later phase task.
-
-`PHASE-ROADMAP.md` may identify a phase as `ready_for_planning` only when its bounded purpose, source authority, planning boundary, prohibited scope, and work classification are approved. A roadmap entry does not create a phase register or implementation authority.
-
-`SYS-PLAN-NEXT-TRANCHE` may turn exactly one qualifying roadmap entry into a reviewable planning PR. Only after that PR merges does its register govern normal task selection in the planned phase. A later explicit proceed command remains required.
-
----
-
-## 11. Enforcement and Reporting
-
-For every proceed command, the harness must report protected-default-branch state, open harness PRs, active/closed phase state, ordinary ready-task result, system-planning evaluation when normal readiness is empty, the selected unit if any, eligibility basis, blocking conditions, and stop condition.
-
-For every PR, the harness must state that no additional task was selected or started.
-
----
-
-## 12. Effective Policy Statement
-
-This harness is a controlled executor with a bounded roadmap-driven planning transition. It is not an autonomous project owner. It may execute only approved tasks and, when normal work is exhausted, only the explicitly constrained system planner backed by an approved roadmap and specific source authority. Human review and squash merge remain required for every PR.
+The harness must stop and report the smallest missing source document, manifest entry, roadmap entry, catalog item, executable definition, external-control attestation, or Project Owner decision when safe execution is not possible.
